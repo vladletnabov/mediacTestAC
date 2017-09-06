@@ -86,15 +86,10 @@ public class ExamWorker {
             //logExam("QUESTION: " + question.getText());
             String addQuestion="Назовите все правильные ответы: ";
             String questionForm = getQuestionForm().getText().trim();
-            questionForm = questionForm.replace(":",": ");
-            questionForm = questionForm.replace("^\\+","");
-            questionForm = questionForm.replace("«","\\");
-            questionForm = questionForm.replace("»","\\");
+            questionForm = removeSimpleSymbolsFromStr(questionForm);
             questionForm = questionForm.trim();
             String questionWA = question.getText().trim();
-            questionWA = questionWA.replace("«","\\");
-            questionWA = questionWA.replace("»","\\");
-            questionWA = questionWA.replace("^\\+","");
+            questionWA = removeSimpleSymbolsFromStr(questionWA);
             questionWA = questionWA.trim();
             String questionWAadd = (addQuestion + questionWA).trim();
             if(simpleCompareStrings(questionForm, questionWA)){
@@ -119,6 +114,14 @@ public class ExamWorker {
             }
         }
         return result;
+    }
+
+    public String removeSimpleSymbolsFromStr(String str){
+        str = str.replace(":",": ");
+        str = str.replace("^\\+","");
+        str = str.replace("«","\\");
+        str = str.replace("»","\\");
+        return str;
     }
 
     public Question getWriteQuestionWithAnswers(Question question){
@@ -149,16 +152,28 @@ public class ExamWorker {
         List<Answer> formAnswers = listAnswersForm;
         List<Answer> baseAnswers = listAnswersBase;
         List<Answer> resultAnswersWithIDs = new ArrayList<Answer>();
+        List<String> okAll = new ArrayList<String>();
+        okAll.add("Верно все");
+        okAll.add("Верно всё");
+        okAll.add("Верно все перечисленное");
+        okAll.add("Верно всё перечисленное");
+        okAll.add("Всё перечисленное");
+        okAll.add("Все перечисленное");
 
         for(Answer formAnswer: formAnswers){
             //перебираем все  вопросы формы и сравниваем по очередит с вопросами из базы
             for(Answer rightAnswer: baseAnswers){
-                if(simpleCompareStrings(formAnswer.getText(), rightAnswer.getText())){
+                String formText = formAnswer.getText().trim();
+                formText = removeSimpleSymbolsFromStr(formText);
+                String rightText = rightAnswer.getText().trim();
+                rightText = removeSimpleSymbolsFromStr(rightText);
+
+                if(simpleCompareStrings(formText, rightText)){
                     resultAnswersWithIDs.add(formAnswer);
                     logExam("answerText(simple compare): " + formAnswer.getText());
                     break;
                 }
-                if (shingleCompareStrings(formAnswer.getText(), rightAnswer.getText())){
+                if (shingleCompareStrings(formText, rightText)){
                     resultAnswersWithIDs.add(formAnswer);
                     logExam("answerText(shingle compare): " + formAnswer.getText());
                     break;
@@ -166,6 +181,58 @@ public class ExamWorker {
             }
 
         }
+
+        logExam("Проверка на наличие ответа ВСЁ ВЕРНО/ВЕРНО ВСЁ ПЕРЕЧИСЛЕННОЕ");
+        if(formAnswers.size()==resultAnswersWithIDs.size()){
+            Answer resultAnswer = null;
+            for(Answer resAnswer: resultAnswersWithIDs){
+                String checkText = resAnswer.getText().trim();
+                checkText = removeSimpleSymbolsFromStr(checkText);
+                for(String rightAll: okAll){
+                    String rightText = rightAll.trim();
+                    rightText = removeSimpleSymbolsFromStr(rightText);
+
+                    if(simpleCompareStrings(checkText, rightText)){
+                        resultAnswer = resAnswer;
+                        break;
+                    }
+                    if (shingleCompareStrings(checkText, rightText)){
+                        resultAnswer = resAnswer;
+                        break;
+                    }
+                }
+            }
+            if(resultAnswer!=null){
+                resultAnswersWithIDs = new ArrayList<Answer>();
+                resultAnswersWithIDs.add(resultAnswer);
+            }
+            logExam("Убраны лишние ответы. Оставлен только ВСЁ ВЕРНО/ВЕРНО ВСЁ ПЕРЕЧИСЛЕННОЕ");
+        }
+        else{
+            List<Answer> resultAnswers = new ArrayList<Answer>();
+            for(Answer resAnswer: resultAnswersWithIDs){
+                String checkText = resAnswer.getText().trim();
+                checkText = removeSimpleSymbolsFromStr(checkText);
+                for(String rightAll: okAll){
+                    String rightText = rightAll.trim();
+                    rightText = removeSimpleSymbolsFromStr(rightText);
+
+                    if(!simpleCompareStrings(checkText, rightText)){
+                        resultAnswers.add(resAnswer);
+                        break;
+                    }
+                    if (!shingleCompareStrings(checkText, rightText)){
+                        resultAnswers.add(resAnswer);
+                        break;
+                    }
+                }
+            }
+            resultAnswersWithIDs = resultAnswers;
+            logExam("Присуствуют неправильные ответы в списке с формы экзамена. " +
+                    "Удалён ответ ВСЁ ВЕРНО/ВЕРНО ВСЁ ПЕРЕЧИСЛЕННОЕ");
+        }
+        logExam("Ответы на вопрос сформированы. Если ответа нет, значит вопрос будет пропущен. " +
+                "При включённой автогенерации сформируется в случайном порядке.");
 
         return  resultAnswersWithIDs;
     }
