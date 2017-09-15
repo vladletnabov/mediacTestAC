@@ -159,6 +159,21 @@ public class SettingsController {
     @FXML // fx:id="lblCoincedence"
     private Label lblCoincedence; // Value injected by FXMLLoader
 
+    @FXML
+    private Slider dopDelayAfterTest;
+
+    @FXML
+    private Label lblDopDelayAfterTest;
+
+    @FXML
+    private RadioButton selectAlgoOld;
+
+    @FXML
+    private ToggleGroup selectAlgoGroup;
+
+    @FXML
+    private RadioButton selectAlgoNew;
+
     @FXML // fx:id="tblResultTesterExam"
     private TableView<TableResultTesterExam> tblResultTesterExam = new TableView<TableResultTesterExam>(); // Value injected by FXMLLoader
 
@@ -317,7 +332,7 @@ public class SettingsController {
                     break;
                 }
 
-                delayInput(15); //задержка перехода на следующую страницу
+                delayInput(10); //задержка перехода на следующую страницу
                 if(!pressStartExamButton(myWebDriver)){
                     examResultRecord.setResult("ошибка отправки согласия на тест");
                     listResultTesterExams.add(examResultRecord);
@@ -391,6 +406,8 @@ public class SettingsController {
                 }
                 if(setAnsers){examResultRecord.setResult("Ответы заданы");}
 
+                delayInput(mainApp.getDataConfig().get(0).getDopDelay());
+
                 if(pressFinishExam(myWebDriver)){
                     examResultRecord.setResult("Переход на страницу с результатами");
                 }
@@ -450,7 +467,7 @@ public class SettingsController {
 
     public HashMap<String, HashMap<String, Integer>> getResultPageAsString(WebDriver myWebDriver){
 
-        delayInput(15);
+        delayInput(10);
         this.resultPageAsString = myWebDriver.getPageSource();
 
         //readResultHTMLpageAsString();
@@ -750,7 +767,7 @@ public class SettingsController {
         for(Question questionForm: listQuestionForm){
             //logger.warning("CREATE EXAM for querstion: " + questionForm.getText());
             addLineToConsole("CREATE EXAM for querstion: " + questionForm.getText());
-            ExamWorker exam = new ExamWorker(questionForm, listQuestionBase, mainApp.getDataConfig().get(0).getCoincedence());
+            ExamWorker exam = new ExamWorker(questionForm, listQuestionBase, mainApp.getDataConfig().get(0).getCoincedence(), mainApp.getDataConfig().get(0).getAlgoOldNew());
             exam.setController(this);
             //
             boolean unknownQuestion = true;
@@ -825,6 +842,19 @@ public class SettingsController {
             }
         });
 
+        dopDelayAfterTest.valueProperty().addListener(new ChangeListener<Number>() {
+            public void changed(ObservableValue<? extends Number> ov,
+                                Number old_val, Number new_val) {
+                logger.info(String.valueOf(new_val.doubleValue()));
+                String delay= String.format("%.2f", new_val);
+                logger.info(delay);
+                delay = delay.replace(",",".");
+                logger.info(delay);
+                setLblDopDelay(Double.valueOf(delay));
+                mainApp.getDataConfig().get(0).setDopDelay(dopDelayAfterTest.getValue());
+            }
+        });
+
         maxTimout.valueProperty().addListener(new ChangeListener<Number>() {
             public void changed(ObservableValue<? extends Number> ov,
                                 Number old_val, Number new_val) {
@@ -884,6 +914,23 @@ public class SettingsController {
             }
         });
 
+        selectAlgoGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+            @Override
+            public void changed(ObservableValue<? extends Toggle> ov, Toggle old_toggle, Toggle new_toggle) {
+                // Has selection.
+                if (selectAlgoGroup.getSelectedToggle() != null) {
+                    RadioButton button = (RadioButton) selectAlgoGroup.getSelectedToggle();
+                    logger.info("RADIO: " + button.getId());
+                    if((button.getId()).compareTo("selectAlgoOld")==0){
+                        mainApp.getDataConfig().get(0).setAlgoOldNew(true);
+                    }
+                    else{
+                        mainApp.getDataConfig().get(0).setAlgoOldNew(false);
+                    }
+                }
+            }
+        });
+
         //tblResultTesterExam.add;
         //;
 
@@ -929,6 +976,8 @@ public class SettingsController {
         this.hostname.setText(this.mainApp.getDataConfig().get(0).getHostname());
         this.minTimout.setValue(this.mainApp.getDataConfig().get(0).getMinTimout());
         this.maxTimout.setValue(this.mainApp.getDataConfig().get(0).getMaxTimout());
+        this.dopDelayAfterTest.setValue(this.mainApp.getDataConfig().get(0).getDopDelay());
+        setLblDopDelay(this.mainApp.getDataConfig().get(0).getDopDelay());
 
         if (this.mainApp.getDataConfig().get(0).getAutoAnswer()==true){
             /*radioUnknownQuastTrue.setSelected(true);
@@ -941,6 +990,12 @@ public class SettingsController {
             unknowQuestion.selectToggle(radioUnknownQuastFalse);
         }
 
+        if(this.mainApp.getDataConfig().get(0).getAlgoOldNew()){
+            selectAlgoGroup.selectToggle(selectAlgoOld);
+        }
+        else{
+            selectAlgoGroup.selectToggle(selectAlgoNew);
+        }
 
 
 
@@ -1300,6 +1355,11 @@ public class SettingsController {
     @FXML
     void startGenQuestions(MouseEvent event) {
         genQuestionFromRawFile();
+    }
+
+    public void setLblDopDelay(double delay){
+        String textDelay= String.format("%.2f", delay);
+        this.lblDopDelayAfterTest.setText(String.valueOf(textDelay) + " сек.");
     }
 
 }
