@@ -79,7 +79,7 @@ public class MainApp extends Application {
         Date date = new Date();
         String millis = String.valueOf(date.getTime());
         this.primaryStage = primaryStage;
-        this.primaryStage.setTitle("AddressApp");
+        this.primaryStage.setTitle("Мадлен");
 
         this.configFile = new XMLReader("config.xml", "conf", "settings");
         this.questionsFile = new XMLReader("questions.xml","conf", "questions");
