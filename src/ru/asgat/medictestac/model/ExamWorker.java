@@ -18,9 +18,23 @@ public class ExamWorker {
     private int numShingles = 2;
     private static final Logger logger = Logger.getLogger( XMLReader.class.getName() );
     private SettingsController controller = null;
-    //private Question QuestionWithAnswerIDs;
+    private boolean useAlgoOld;
 
     //private Worker tester;
+
+    public ExamWorker(Question question, List<Question> listQuestionWithAnswers, Double coincedence, boolean useAlgoOld){
+        /*
+        * question тестируемый вопрос
+        * listQuestionWithAnswers - список вопросов с ответами
+        * coincedence - точность при проверке предложений
+        *
+        * */
+        this.questionForm = question;
+        this.listQuestionsWA = listQuestionWithAnswers;
+        this.coincedence = coincedence;
+        this.useAlgoOld = useAlgoOld;
+        //this.tester = tester;
+    }
 
     public ExamWorker(Question question, List<Question> listQuestionWithAnswers, Double coincedence){
         /*
@@ -33,12 +47,15 @@ public class ExamWorker {
         this.listQuestionsWA = listQuestionWithAnswers;
         this.coincedence = coincedence;
         //this.tester = tester;
+
+        this.useAlgoOld = true;
     }
     public ExamWorker(Question question, List<Question> listQuestionWithAnswers){
         this.questionForm = question;
         this.listQuestionsWA = listQuestionWithAnswers;
         this.coincedence = 70.0;
         //this.tester = tester;
+        this.useAlgoOld = true;
     }
 
     public boolean simpleCompareStrings(String str1, String str2){
@@ -74,6 +91,68 @@ public class ExamWorker {
     }
 
     public Question checkQuestionWithAnswer(){
+        if (useAlgoOld){
+            return checkQuestionWithAnswerOldAlgorithm();
+        }
+        else{
+            return checkQuestionWithAnswerNewAlgorithm();
+        }
+    }
+
+    public Question checkQuestionWithAnswerNewAlgorithm(){
+        logExam("checkQuestionWithAnswerNewAlgorithm");
+        // Возвращает ID вопроса из формы
+        Question result = null;
+        for(int i=0; i<getListQuestionsWA().size(); i++){
+            Question question = getListQuestionsWA().get(i);
+            String addQuestion="Назовите все правильные ответы: ";
+            String questionForm = getQuestionForm().getText().trim();
+            questionForm = removeSimpleSymbolsFromStr(questionForm);
+            questionForm = questionForm.trim();
+            String questionWA = question.getText().trim();
+            questionWA = removeSimpleSymbolsFromStr(questionWA);
+            questionWA = questionWA.trim();
+            String questionWAadd = (addQuestion + questionWA).trim();
+            if(simpleCompareStrings(questionForm, questionWA)){
+                logExam("QuestionText(simple compare): " + questionWA);
+                result = getWriteQuestionWithAnswers(question);
+                break;
+            }
+            if(simpleCompareStrings(questionForm, questionWAadd)){
+                logExam("QuestionText(simple compare) add: " + questionWAadd);
+                result = getWriteQuestionWithAnswers(question);
+                break;
+            }
+        }
+        if (result==null){
+            for(int i=0; i<getListQuestionsWA().size(); i++){
+                Question question = getListQuestionsWA().get(i);
+                String addQuestion="Назовите все правильные ответы: ";
+                String questionForm = getQuestionForm().getText().trim();
+                questionForm = removeSimpleSymbolsFromStr(questionForm);
+                questionForm = questionForm.trim();
+                String questionWA = question.getText().trim();
+                questionWA = removeSimpleSymbolsFromStr(questionWA);
+                questionWA = questionWA.trim();
+                String questionWAadd = (addQuestion + questionWA).trim();
+                if (shingleCompareStrings(questionForm, questionWA)){
+                    logExam("QuestionText(shingle compare): " + questionWA);
+                    result = getWriteQuestionWithAnswers(question);
+                    break;
+                }
+                if (shingleCompareStrings(questionForm, questionWAadd )){
+                    logExam("QuestionText(shingle compare) add: " + questionWAadd);
+                    result = getWriteQuestionWithAnswers(question);
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public Question checkQuestionWithAnswerOldAlgorithm(){
+        logExam("checkQuestionWithAnswerOldAlgorithm");
         // Возвращает ID вопроса из формы
         Question result = null;
         //logExam(" getListQuestionsWA().size: " +  getListQuestionsWA().size());
@@ -125,11 +204,17 @@ public class ExamWorker {
     }
 
     public Question getWriteQuestionWithAnswers(Question question){
+        logExam("getWriteQuestionWithAnswers: проверка ответов у вопроса ");
         List <Answer> listRightAnswers = getRightAnswerIDs(getQuestionForm().getAnswers(), question.getAnswers());
         if(listRightAnswers.size()==0){
             return null;
         }
         question.setAnswers(listRightAnswers);
+        logExam("getWriteQuestionWithAnswers: Вопрос: " + question.getText());
+        for(Answer answer: question.getAnswers()){
+            logExam("getWriteQuestionWithAnswers: ответ:  id=" + answer.getId() + " . "+ answer.getText());
+        }
+        
         return question;
     }
 

@@ -16,11 +16,14 @@ public class Settings extends BaseNode implements BaseInternalElementsNode {
     private double minTimout;
     private double maxTimout;
     private double coincedence;
-    final private int deltaTimout = 10; // разница между минимальным и максимальным значениеми в секундах
+    final private int deltaTimout = 3; // разница между минимальным и максимальным значениеми в секундах
     private static final Logger logger = Logger.getLogger( XMLReader.class.getName() );
 
+    private double dopDelay;
+    private boolean algoOldNew; // алгоритм сравнения текста True - старый, False - новый
+
     public Settings() {
-        this.minTimout = 5;
+        this.minTimout = 0;
         this.maxTimout = minTimout + deltaTimout;
         this.autoAnswer = false;
         this.proto = new HashMap<String, Boolean>();
@@ -28,6 +31,8 @@ public class Settings extends BaseNode implements BaseInternalElementsNode {
         this.proto.put("https", false);
         this.hostname = "http://hostname.ru";
         this.coincedence = 70;
+        this.dopDelay = 0.0;
+        this.algoOldNew = true;
         setIdNode("");
         setNodeName("setting");
     }
@@ -130,6 +135,10 @@ public class Settings extends BaseNode implements BaseInternalElementsNode {
         node.setTextContent(String.valueOf(getAutoAnswer()));
         settingNode.appendChild(node);
 
+        node = doc.createElement("algorithm");
+        node.setTextContent(String.valueOf(isAlgoOldNew()));
+        settingNode.appendChild(node);
+
         node = doc.createElement("mintimout");
         node.setTextContent(String.valueOf(getMinTimout()));
         settingNode.appendChild(node);
@@ -138,6 +147,9 @@ public class Settings extends BaseNode implements BaseInternalElementsNode {
         node.setTextContent(String.valueOf(getMaxTimout()));
         settingNode.appendChild(node);
 
+        node = doc.createElement("dopdelay");
+        node.setTextContent(String.valueOf(getDopDelay()));
+        settingNode.appendChild(node);
 
         node = doc.createElement("coincedence");
         node.setTextContent(String.valueOf(getCoincedence()));
@@ -180,11 +192,17 @@ public class Settings extends BaseNode implements BaseInternalElementsNode {
                 case "autoanswer":
                     setAutoAnswer(Boolean.valueOf(currentNode.getTextContent()));
                     break;
+                case "algorithm":
+                    setAlgoOldNew(Boolean.valueOf(currentNode.getTextContent()));
+                    break;
                 case "mintimout":
                     setMinTimout(Double.valueOf(currentNode.getTextContent()));
                     break;
                 case "maxtimout":
                     setMaxTimout(Double.valueOf(currentNode.getTextContent()));
+                    break;
+                case "dopdelay":
+                    setDopDelay(Double.valueOf(currentNode.getTextContent()));
                     break;
                 case "coincedence":
                     setCoincedence(Double.valueOf(currentNode.getTextContent()));
@@ -210,6 +228,26 @@ public class Settings extends BaseNode implements BaseInternalElementsNode {
         double min = getMinTimout();
         max -= min;
         return (double) (Math.random() * ++max) + min;
+    }
+
+    public double getDopDelay() {
+        return dopDelay;
+    }
+
+    public void setDopDelay(double dopDelay) {
+        this.dopDelay = dopDelay;
+    }
+
+    public boolean isAlgoOldNew() {
+        return algoOldNew;
+    }
+
+    public boolean getAlgoOldNew() {
+        return algoOldNew;
+    }
+
+    public void setAlgoOldNew(boolean algoOldNew) {
+        this.algoOldNew = algoOldNew;
     }
 }
 
