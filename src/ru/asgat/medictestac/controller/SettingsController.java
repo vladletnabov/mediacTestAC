@@ -320,7 +320,7 @@ public class SettingsController {
                 addLineToConsole("get - ok");
                 addLineToConsole(myWebDriver.getTitle());
 
-
+                
                 // ввод регистрационных данных
                 setSeleniumAuthData(myWebDriver);
                 //проверка авторизации
@@ -343,7 +343,7 @@ public class SettingsController {
                 String examPageAsString = myWebDriver.getPageSource();
 
 
-                HashMap <String, List<Question>> hashQuestionCompareResult= new HashMap<String, List<Question>>();
+                HashMap <String, HashMap<String, Question>> hashQuestionCompareResult= new HashMap<String, HashMap<String, Question>>();
                 /*
                 * hashQuestionCompareResult содержит списки вопросов с правильными ответами и незнакомых вопросов
                 * со вусеми ответами
@@ -359,7 +359,7 @@ public class SettingsController {
                         examPartOfProgress , hashQuestionCompareResult, "READFILEFROMDISK");*/
 
                 hashQuestionCompareResult = prepareDataForClickBot(examDate, indTester, listQuestionBase,
-                                examPartOfProgress , hashQuestionCompareResult, examPageAsString);
+                                examPartOfProgress , examPageAsString);
 
                 examResultRecord.setCountQuestions(hashQuestionCompareResult.get("questionForm").size());
                 examResultRecord.setCountRightQuestions(hashQuestionCompareResult.get("questionWithAnswers").size());
@@ -377,7 +377,7 @@ public class SettingsController {
                 List<Question> listAutoGenQuestions = new ArrayList<Question>();
 
                 if (mainApp.getDataConfig().get(0).getAutoAnswer()){
-                    listAutoGenQuestions = genAutoGenAnswers(hashQuestionCompareResult.get("newQuestions"));
+                    listAutoGenQuestions = genAutoGenAnswers(convertHashToList(hashQuestionCompareResult.get("newQuestions")));
                 }
 
                 if (hashQuestionCompareResult.get("questionForm").size()>
@@ -388,8 +388,9 @@ public class SettingsController {
                 }
 
                 boolean setAnsers = true;
-                for(Question question: hashQuestionCompareResult.get("questionWithAnswers")){
-                    if(!clickAnswerSelenium(myWebDriver, question)){
+                for(Map.Entry<String, Question> entry : hashQuestionCompareResult.get("questionWithAnswers").entrySet()){
+                    addLineToConsole("Pressed for question id: " + entry.getKey());
+                    if(!clickAnswerSelenium(myWebDriver, entry.getValue())){
                         addLineToConsole("Прервано на обработке вопросов из базы");
                         examResultRecord.setResult("Прервано на обработке вопросов из базы");
                         setAnsers = false;
@@ -405,6 +406,31 @@ public class SettingsController {
                     }
                 }
                 if(setAnsers){examResultRecord.setResult("Ответы заданы");}
+
+                addLineToConsole("TEST CHECK: ");
+
+                List<String> listKey = new ArrayList(hashQuestionCompareResult.get("questionWithAnswers").keySet());
+                Collections.sort(listKey);
+                for (String key: listKey){
+                    addLineToConsole(key);
+                    addLineToConsole(hashQuestionCompareResult.get("questionWithAnswers").get(key).getIdNode());
+                    addLineToConsole(hashQuestionCompareResult.get("questionWithAnswers").get(key).getText());
+                    addLineToConsole(hashQuestionCompareResult.get("questionWithAnswers").get(key).getAnswers().get(0).getId());
+                    addLineToConsole(hashQuestionCompareResult.get("questionWithAnswers").get(key).getAnswers().get(0).getText());
+                }
+
+                addLineToConsole("TEST CHECK2: ");
+
+                listKey = new ArrayList(hashQuestionCompareResult.get("questionForm").keySet());
+                Collections.sort(listKey);
+                for (String key: listKey){
+                    addLineToConsole(key);
+                    addLineToConsole(hashQuestionCompareResult.get("questionForm").get(key).getIdNode());
+                    addLineToConsole(hashQuestionCompareResult.get("questionForm").get(key).getText());
+                    addLineToConsole(hashQuestionCompareResult.get("questionForm").get(key).getAnswers().get(0).getId());
+                    addLineToConsole(hashQuestionCompareResult.get("questionForm").get(key).getAnswers().get(0).getText());
+                }
+
 
                 delayInput(mainApp.getDataConfig().get(0).getDopDelay());
 
@@ -578,7 +604,7 @@ public class SettingsController {
     public boolean clickAnswerSelenium(WebDriver myWebDriver, Question question){
 
         for(Answer answer: question.getAnswers()){
-            delayInput(mainApp.getDataConfig().get(0).getCurrentTimout());
+            //delayInput(mainApp.getDataConfig().get(0).getCurrentTimout());
             String elementId = "input#" + answer.getId();
             try {
                 WebElement element = myWebDriver.findElement(By.cssSelector(elementId));
@@ -634,11 +660,12 @@ public class SettingsController {
         return listAutoGenQuestion;
     }
 
-    public HashMap <String, List<Question>> prepareDataForClickBot(Date examDate, int indTester,
+    public HashMap <String, HashMap<String, Question>> prepareDataForClickBot(Date examDate, int indTester,
                                                                    List<Question> listQuestionBase,
                                                                    double examPartOfProgress,
-                                                                   HashMap <String, List<Question>> hashQuestionCompareResult,
                                                                    String htmlString){
+
+        HashMap <String, HashMap<String, Question>> hashQuestionCompareResultMethod = new HashMap<String,  HashMap<String, Question>>();
         logger.info("test for tester: " + getCurrentTester().getFamily() + " " + getCurrentTester().getName());
         addLineToConsole("Tester: " + getCurrentTester().getFamily() + " " + getCurrentTester().getName() + ", "+ getCurrentTester().getYear());
         addLineToConsole("time to start: " + currentDateTime());
@@ -674,32 +701,40 @@ public class SettingsController {
                 Question currentQuestion = new Question();
                 currentQuestion.setValueFromHtmlNode(questionNode);
                 String answers = "";
+                String idQuestion = currentQuestion.getAnswers().get(0).getId().split("_")[0];
                 addLineToConsole(currentQuestion.getText());
                 for(int indAns=0; indAns<currentQuestion.getAnswers().size(); indAns++){
                     answers += (indAns + 1) + ". " + currentQuestion.getAnswers().get(indAns).getText() + " (" + currentQuestion.getAnswers().get(indAns).getId() + ")\n";
                 }
+                currentQuestion.setIdNode(idQuestion);
                 addLineToConsole(answers);
                 logger.warning("Add to list question: " + currentQuestion.getText());
+                addLineToConsole("Add to list question: " + currentQuestion.getText());
                 listQuestionExamForm.add(currentQuestion);
             }
         }
 
-        hashQuestionCompareResult = compareQuestionFromFormAndBase(listQuestionExamForm, listQuestionBase);
+        checkListQuestionsResultWA(listQuestionExamForm);
+
+        hashQuestionCompareResultMethod = compareQuestionFromFormAndBase(listQuestionExamForm, listQuestionBase);
 
         addLineToConsole("Количество вопросов: " + listQuestionExamForm.size());
-        addLineToConsole("Количество вопросов с ответами: " + hashQuestionCompareResult.get("questionWithAnswers").size());
-        addLineToConsole("Количество вопросов без ответов(новых): " + hashQuestionCompareResult.get("newQuestions").size());
+        addLineToConsole("Количество вопросов с ответами: " + hashQuestionCompareResultMethod.get("questionWithAnswers").size());
+        addLineToConsole("Количество вопросов без ответов(новых): " + hashQuestionCompareResultMethod.get("newQuestions").size());
 
-        if (hashQuestionCompareResult.get("newQuestions").size()>0){
-            createNewQuestionFile(getCurrentTester(), hashQuestionCompareResult.get("newQuestions"));
+        if (hashQuestionCompareResultMethod.get("newQuestions").size()>0){
+            List<Question> listNewQuestions = convertHashToList(hashQuestionCompareResultMethod.get("newQuestions"));
+            createNewQuestionFile(getCurrentTester(), listNewQuestions);
         }
 
         currentProggress += examPartOfProgress;
         progressTesting.setProgress(currentProggress);
 
-        if (hashQuestionCompareResult.get("newQuestions").size()>0){
-            for (int indNewQuestion=0; indNewQuestion< hashQuestionCompareResult.get("newQuestions").size(); indNewQuestion++){
-                Question questionForNew = hashQuestionCompareResult.get("newQuestions").get(indNewQuestion);
+        if (hashQuestionCompareResultMethod.get("newQuestions").size()>0){
+            addLineToConsole("New questions more then 0");
+            //for (int indNewQuestion=0; indNewQuestion< hashQuestionCompareResultMethod.get("newQuestions").size(); indNewQuestion++){
+            for(Map.Entry<String, Question> entry : hashQuestionCompareResultMethod.get("newQuestions").entrySet()) {
+                Question questionForNew = entry.getValue();
                 TableResultNewQuestion newQuestion = new TableResultNewQuestion();
                 setNewQuestionID(getNewQuestionID()+1);
                 newQuestion.setId((long)getNewQuestionID());
@@ -712,12 +747,55 @@ public class SettingsController {
         }
 
         getCurrentTester().setAskedQuestions(listQuestionExamForm);
-        getCurrentTester().setNewQuestions(hashQuestionCompareResult.get("newQuestions"));
+        getCurrentTester().setNewQuestions(convertHashToList(hashQuestionCompareResultMethod.get("newQuestions")));
 
-        hashQuestionCompareResult.put("questionForm", listQuestionExamForm);
+        hashQuestionCompareResultMethod.put("questionForm", convertListToHash(listQuestionExamForm));
 
-        return hashQuestionCompareResult;
+        //checkHashQuestionsResultsWA(hashQuestionCompareResultMethod);
+        addLineToConsole("prepareDataForClickBot completed");
+        return hashQuestionCompareResultMethod;
 
+    }
+
+    public HashMap<String, Question> convertListToHash(List<Question> list){
+        HashMap<String, Question> hashMap = new HashMap<String, Question>();
+        int ind = 1;
+        for(Question question: list){
+            if(question.getIdNode().compareTo("")==0){
+                String id = "c" + ind;
+                hashMap.put(id, question);
+            }
+            else{
+                hashMap.put(question.getIdNode(), question);
+            }
+        }
+        return hashMap;
+    }
+
+    public List<Question> convertHashToList(HashMap<String, Question> hashQuestions){
+        List<Question> list = new ArrayList<Question>();
+        for(Map.Entry<String, Question> entry : hashQuestions.entrySet()) {
+            String key = entry.getKey();
+            list.add(entry.getValue());
+        }
+        return list;
+    }
+
+    public void checkHashQuestionsResultsWA(HashMap <String, List<Question>> hashQuestionCompareResultMethod ){
+        checkListQuestionsResultWA(hashQuestionCompareResultMethod.get("questionWithAnswers"));
+    }
+
+    public void checkListQuestionsResultWA(List<Question> list){
+        addLineToConsole("size list: " + list.size());
+        addLineToConsole("---------------------CHECKING---------------------");
+        for(Question question: list){
+            addLineToConsole("Question: " + question.getIdNode() + ". " +  question.getText());
+            for(Answer answer: question.getAnswers()){
+                addLineToConsole(" - answer: "+ answer.getId() + ". " + answer.getText());
+            }
+        }
+
+        addLineToConsole("--------------------- FINISH ---------------------");
     }
 
 
@@ -745,7 +823,7 @@ public class SettingsController {
     }
 
 
-    public HashMap<String, List<Question>> compareQuestionFromFormAndBase(List<Question> listQuestionForm,
+    public HashMap<String, HashMap<String, Question>> compareQuestionFromFormAndBase(List<Question> listQuestionForm,
                                                         List<Question> listQuestionBase){
         /*
         * listQuestionForm - список полученный со страницы сервера (question не имеет ID, ответы не имеют ID)
@@ -757,48 +835,79 @@ public class SettingsController {
         *
         * */
         addLineToConsole("Compare question from HTML page and Base");
-        List <Question> listQuestionAnswers = new ArrayList<Question>();
-        List <Question> listNewQuestions = new ArrayList<Question>();
-        //ExamWorker exam = new ExamWorker(questionForm, listQuestionWisthAnswer, tester);
-
-        //logger.info("compareQuestionFromFormAndBase\\ listQuestionForm: " + listQuestionForm.size());
-        //logger.info("compareQuestionFromFormAndBase\\ listQuestionBase: " + listQuestionBase.size());
+        //List <Question> listQuestionAnswers = new ArrayList<Question>();
+        HashMap <String, Question> hashQuestionAnswers = new HashMap<String, Question>();
+        //List <Question> listNewQuestions = new ArrayList<Question>();
+        HashMap <String, Question> hashNewQuestions  = new HashMap<String, Question>();
 
         for(Question questionForm: listQuestionForm){
-            //logger.warning("CREATE EXAM for querstion: " + questionForm.getText());
-            addLineToConsole("CREATE EXAM for querstion: " + questionForm.getText());
+            addLineToConsole("CREATE EXAM for querstion: " +  questionForm.getIdNode() +". " +  questionForm.getText());
             ExamWorker exam = new ExamWorker(questionForm, listQuestionBase, mainApp.getDataConfig().get(0).getCoincedence(), mainApp.getDataConfig().get(0).getAlgoOldNew());
             exam.setController(this);
             //
             boolean unknownQuestion = true;
-            /*for(Question questionBase: listQuestionBase){
-                Question resultQuestion = exam.checkQuestionWithAnswer();
-                if (resultQuestion!=null){
-                    listQuestionAnswers.add(resultQuestion);
-                    unknownQuestion=false;
-                    break;
-                }
-            }*/
 
+            addLineToConsole("querstion ID: " + questionForm.getIdNode());
             Question resultQuestion = exam.checkQuestionWithAnswer();
             if (resultQuestion!=null){
-                listQuestionAnswers.add(resultQuestion);
+                /*addLineToConsole("Add to hashQuestionAnswers question id: " + resultQuestion.getIdNode() + ". " + resultQuestion.getText());
+                addLineToConsole("First answer id: " + resultQuestion.getAnswers().get(0).getId() + ". " + resultQuestion.getAnswers().get(0).getText());
+                addLineToConsole("Add to hashQuestionAnswers question id: " + resultQuestion.getIdNode());*/
+                //listQuestionAnswers.add(resultQuestion);
+                Question question = new Question();
+                question.setIdNode(resultQuestion.getIdNode());
+                question.setText(resultQuestion.getText());
+                question.setAnswers(resultQuestion.getAnswers());
+                resultQuestion.hashCode();
+                //hashQuestionAnswers.put(resultQuestion.getIdNode(), resultQuestion);
+                hashQuestionAnswers.put(question.getIdNode(), question);
+                addLineToConsole("............................\nCheck hashQuestionAnswers{}...");
+                checkHashQuestionsResultWA(hashQuestionAnswers);
+                addLineToConsole("............................\n");
+                resultQuestion=null;
+
                 unknownQuestion=false;
             }
 
             if (unknownQuestion){
-                listNewQuestions.add(questionForm);
+                //listNewQuestions.add(questionForm);
+                hashNewQuestions.put(questionForm.getIdNode(), questionForm);
             }
 
             //logger.warning("EXAM for querstion COMPLETED");
 
         }
-        HashMap<String, List<Question>> result = new HashMap<String, List<Question>>();
 
-        result.put("questionWithAnswers", listQuestionAnswers);
-        result.put("newQuestions", listNewQuestions);
+        //checkListQuestionsResultWA(checkQuestionWithAnswer);
+        addLineToConsole("----------------------------------------------\nchecking hashQuestionAnswers");
+        checkHashQuestionsResultWA(hashQuestionAnswers);
+        //HashMap<String, List<Question>> result = new HashMap<String, List<Question>>();
+        HashMap<String, HashMap<String, Question>> result = new HashMap<String, HashMap<String, Question>>();
+
+        checkHashQuestionsResultWA(hashQuestionAnswers);
+        /*result.put("questionWithAnswers", listQuestionAnswers);
+        result.put("newQuestions", listNewQuestions);*/
+        result.put("questionWithAnswers", hashQuestionAnswers);
+        result.put("newQuestions", hashNewQuestions);
 
         return result;
+    }
+
+    public void checkHashQuestionsResultWA(HashMap<String, Question> hashMapQuestions){
+        addLineToConsole("size hashMapQuestions: " + hashMapQuestions.size());
+        addLineToConsole("---------------------CHECK HM---------------------");
+        List<String> listKey = new ArrayList(hashMapQuestions.keySet());
+        Collections.sort(listKey);
+        for(String key: listKey){
+        //for(Map.Entry<String, Question> entry : hashMapQuestions.entrySet()){
+            Question question = hashMapQuestions.get(key);
+            addLineToConsole("Question: " + key + " ("+ question.getIdNode() + "). " +  question.getText());
+            for(Answer answer: question.getAnswers()){
+                addLineToConsole(" - answer: "+ answer.getId() + ". " + answer.getText());
+            }
+        }
+
+        addLineToConsole("--------------------- FINISH ---------------------");
     }
 
     public List<Question> compareQuestinFromFormAndAnswers(List<Question> listQuestionForm,

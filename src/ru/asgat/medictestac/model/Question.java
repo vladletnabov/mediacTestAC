@@ -1,5 +1,6 @@
 package ru.asgat.medictestac.model;
 
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -251,4 +252,30 @@ public class Question extends BaseNode implements BaseInternalElementsNode{ //im
         max -= min;
         return (int) (Math.random() * ++max) + min;
     }
+
+    /*@Override
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (o.getClass() != getClass()){ return false; }
+        if (o == this) {
+            Question question = (Question) o ;
+            if (this.getIdNode().equals(question.getIdNode())){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        final int PRIME = 31;
+        int textHash = text != null ? text.hashCode() : 0;
+        int idHash = getIdNode()!= null ?getIdNode().hashCode() : 0;
+        int answerHash = answers!= null ? answers.hashCode() : 0;
+
+        int result = 31 * textHash + idHash + answerHash;
+        return result;
+
+    }*/
 }

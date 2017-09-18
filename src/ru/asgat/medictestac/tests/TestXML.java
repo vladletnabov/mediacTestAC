@@ -9,6 +9,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import java.nio.file.Files;
@@ -225,6 +227,62 @@ public class TestXML extends TestCase {
         readRawTXT();
         System.out.println("listQuestionFromRawFile" + listQuestionFromRawFile.size());
         assertTrue(listQuestionFromRawFile!=null);
+    }
+
+    @Test
+    public void testListAdd(){
+        List <String> list = new ArrayList<String>();
+
+        list.add("123");
+        list.add("abc");
+        list.add("asd");
+        list.add("qwe");
+        list.add("123");
+        HashMap<String, List<String>> hashMap = new HashMap<String, List<String>>();
+
+        hashMap.put("key", list);
+
+        assertTrue(hashMap.get("key").size()==5);
+
+    }
+
+    public void testHash(){
+        Answer answer1 = new Answer();
+        answer1.setText("asd");
+        answer1.setId("q1_1");
+        Answer answer2 = new Answer();
+        answer2.setText("asd");
+        answer2.setId("q2_1");
+
+        Question question1 = new Question();
+        question1.setText("qwe");
+        question1.setIdNode("q1");
+        question1.getAnswers().add(answer1);
+        System.out.println(question1.hashCode());
+
+        Question question2 = new Question();
+        question2.setText("qwe");
+        question2.setIdNode("q2");
+        question2.getAnswers().add(answer2);
+        System.out.println(question2.hashCode());
+
+        HashMap<String, Question> hashMap = new HashMap<String, Question>();
+        hashMap.put(question1.getIdNode(), question1);
+        hashMap.put(question2.getIdNode(), question2);
+
+        assertNotSame(hashMap.get(question1.getIdNode()),hashMap.get(question2.getIdNode()));
+        //assertNotSame(question,question2);
+        List<String> listKey = new ArrayList(hashMap.keySet());
+        Collections.sort(listKey);
+        for(String key: listKey){
+            //for(Map.Entry<String, Question> entry : hashMapQuestions.entrySet()){
+            Question question = hashMap.get(key);
+            System.out.println("Question: " + key + " ("+ question.getIdNode() + "). " +  question.getText());
+            for(Answer answer: question.getAnswers()){
+                System.out.println(" - answer: "+ answer.getId() + ". " + answer.getText());
+            }
+        }
+
     }
 
 

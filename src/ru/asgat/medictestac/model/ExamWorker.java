@@ -103,6 +103,7 @@ public class ExamWorker {
         logExam("checkQuestionWithAnswerNewAlgorithm");
         // Возвращает ID вопроса из формы
         Question result = null;
+        logExam(".....................examining: " + getQuestionForm().getIdNode());
         for(int i=0; i<getListQuestionsWA().size(); i++){
             Question question = getListQuestionsWA().get(i);
             String addQuestion="Назовите все правильные ответы: ";
@@ -115,11 +116,15 @@ public class ExamWorker {
             String questionWAadd = (addQuestion + questionWA).trim();
             if(simpleCompareStrings(questionForm, questionWA)){
                 logExam("QuestionText(simple compare): " + questionWA);
+                logExam("QuestionText(simple compare) id: " + getQuestionForm().getIdNode());
+                question.setIdNode(getQuestionForm().getIdNode());
                 result = getWriteQuestionWithAnswers(question);
                 break;
             }
             if(simpleCompareStrings(questionForm, questionWAadd)){
                 logExam("QuestionText(simple compare) add: " + questionWAadd);
+                logExam("QuestionText(simple compare) id: " + getQuestionForm().getIdNode());
+                question.setIdNode(getQuestionForm().getIdNode());
                 result = getWriteQuestionWithAnswers(question);
                 break;
             }
@@ -137,11 +142,15 @@ public class ExamWorker {
                 String questionWAadd = (addQuestion + questionWA).trim();
                 if (shingleCompareStrings(questionForm, questionWA)){
                     logExam("QuestionText(shingle compare): " + questionWA);
+                    logExam("QuestionText(simple compare) id: " + getQuestionForm().getIdNode());
+                    question.setIdNode(getQuestionForm().getIdNode());
                     result = getWriteQuestionWithAnswers(question);
                     break;
                 }
                 if (shingleCompareStrings(questionForm, questionWAadd )){
                     logExam("QuestionText(shingle compare) add: " + questionWAadd);
+                    logExam("QuestionText(simple compare) id: " + getQuestionForm().getIdNode());
+                    question.setIdNode(getQuestionForm().getIdNode());
                     result = getWriteQuestionWithAnswers(question);
                     break;
                 }
@@ -214,7 +223,7 @@ public class ExamWorker {
         for(Answer answer: question.getAnswers()){
             logExam("getWriteQuestionWithAnswers: ответ:  id=" + answer.getId() + " . "+ answer.getText());
         }
-        
+
         return question;
     }
 
