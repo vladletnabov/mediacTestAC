@@ -320,7 +320,7 @@ public class SettingsController {
                 addLineToConsole("get - ok");
                 addLineToConsole(myWebDriver.getTitle());
 
-                
+
                 // ввод регистрационных данных
                 setSeleniumAuthData(myWebDriver);
                 //проверка авторизации
@@ -329,7 +329,7 @@ public class SettingsController {
                     listResultTesterExams.add(examResultRecord);
                     myWebDriver.close();
 
-                    break;
+                    continue;
                 }
 
                 delayInput(10); //задержка перехода на следующую страницу
@@ -337,7 +337,7 @@ public class SettingsController {
                     examResultRecord.setResult("ошибка отправки согласия на тест");
                     listResultTesterExams.add(examResultRecord);
                     myWebDriver.close();
-                    break;
+                    continue;
                 }
 
                 String examPageAsString = myWebDriver.getPageSource();
@@ -384,7 +384,7 @@ public class SettingsController {
                         (hashQuestionCompareResult.get("questionWithAnswers").size() + listAutoGenQuestions.size())){
                     examResultRecord.setResult("Список вопросов с ответами меньше, чем вопросов экзамена.");
                     myWebDriver.close();
-                    break;
+                    continue;
                 }
 
                 boolean setAnsers = true;
@@ -394,7 +394,7 @@ public class SettingsController {
                         addLineToConsole("Прервано на обработке вопросов из базы");
                         examResultRecord.setResult("Прервано на обработке вопросов из базы");
                         setAnsers = false;
-                        break;
+                        continue;
                     }
                 }
                 for(Question question: listAutoGenQuestions){
@@ -402,7 +402,7 @@ public class SettingsController {
                         addLineToConsole("Прервано на обработке вопросов с автоматически сгененрированными ответами");
                         examResultRecord.setResult("Прервано на обработке вопросов с автоматически сгененрированными ответами");
                         setAnsers = false;
-                        break;
+                        continue;
                     }
                 }
                 if(setAnsers){examResultRecord.setResult("Ответы заданы");}
@@ -443,7 +443,7 @@ public class SettingsController {
                     mainApp.getLogFile().setDoc(getLogLine().setDocumetStructure(mainApp.getLogFile().getDoc()));
                     mainApp.getLogFile().writeXML();
                     myWebDriver.close();
-                    break;
+                    continue;
                 }
                 HashMap<String, HashMap<String, Integer>> mapResultPage = getResultPageAsString(myWebDriver);
 
