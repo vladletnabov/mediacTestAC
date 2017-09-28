@@ -296,6 +296,7 @@ public class SettingsController {
 
             setNewQuestionID(0);
 
+            testerCicle:
             for (int indTester=0; indTester<mainApp.getLstTesters().size(); indTester++) {
                 setCurrentTester(mainApp.getLstTesters().get(indTester));
                 Date examDate = new Date();
@@ -329,7 +330,7 @@ public class SettingsController {
                     listResultTesterExams.add(examResultRecord);
                     myWebDriver.close();
 
-                    continue;
+                    continue testerCicle;
                 }
 
                 delayInput(10); //задержка перехода на следующую страницу
@@ -337,7 +338,7 @@ public class SettingsController {
                     examResultRecord.setResult("ошибка отправки согласия на тест");
                     listResultTesterExams.add(examResultRecord);
                     myWebDriver.close();
-                    continue;
+                    continue testerCicle;
                 }
 
                 String examPageAsString = myWebDriver.getPageSource();
@@ -394,7 +395,7 @@ public class SettingsController {
                         addLineToConsole("Прервано на обработке вопросов из базы");
                         examResultRecord.setResult("Прервано на обработке вопросов из базы");
                         setAnsers = false;
-                        continue;
+                        continue testerCicle;
                     }
                 }
                 for(Question question: listAutoGenQuestions){
@@ -402,7 +403,7 @@ public class SettingsController {
                         addLineToConsole("Прервано на обработке вопросов с автоматически сгененрированными ответами");
                         examResultRecord.setResult("Прервано на обработке вопросов с автоматически сгененрированными ответами");
                         setAnsers = false;
-                        continue;
+                        continue testerCicle;
                     }
                 }
                 if(setAnsers){examResultRecord.setResult("Ответы заданы");}
@@ -443,7 +444,7 @@ public class SettingsController {
                     mainApp.getLogFile().setDoc(getLogLine().setDocumetStructure(mainApp.getLogFile().getDoc()));
                     mainApp.getLogFile().writeXML();
                     myWebDriver.close();
-                    continue;
+                    continue testerCicle;
                 }
                 HashMap<String, HashMap<String, Integer>> mapResultPage = getResultPageAsString(myWebDriver);
 
